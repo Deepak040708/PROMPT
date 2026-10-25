@@ -2,6 +2,10 @@
 
 PromptCraft is an intelligent, full-stack web application that transforms rough ideas, casual thoughts, incomplete descriptions, and mixed-language inputs (English, Tamil, Thanglish, and colloquial phrasing) into structured, highly actionable, production-grade text prompts for AI tools.
 
+- 🚀 **Live Production App (Full-Stack on Vercel):** [https://promptcraft-dusky.vercel.app](https://promptcraft-dusky.vercel.app)
+- 🌐 **GitHub Pages (Static UI):** [https://deepak040708.github.io/PROMPT/](https://deepak040708.github.io/PROMPT/)
+- 💻 **GitHub Repository:** [https://github.com/Deepak040708/PROMPT](https://github.com/Deepak040708/PROMPT)
+
 ---
 
 ## 🌟 Key Features

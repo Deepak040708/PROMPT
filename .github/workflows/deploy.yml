@@ -40,6 +40,8 @@ jobs:
         run: |
           cd frontend
           npm run build
+        env:
+          VITE_API_BASE_URL: https://promptcraft-dusky.vercel.app/api
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
