@@ -7,10 +7,20 @@ async function request(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (netErr) {
+    if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io') && (!import.meta.env.VITE_API_BASE_URL || API_BASE === '/api')) {
+      throw new Error(
+        'GitHub Pages hosts the static UI only. To enable live AI generation, connect a hosted backend URL via VITE_API_BASE_URL.'
+      );
+    }
+    throw netErr;
+  }
 
   const contentType = response.headers.get('content-type') || '';
   let data;
@@ -21,6 +31,11 @@ async function request(endpoint, options = {}) {
   }
 
   if (!response.ok) {
+    if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io') && (!import.meta.env.VITE_API_BASE_URL || API_BASE === '/api')) {
+      throw new Error(
+        'GitHub Pages hosts the static UI only. To enable live AI generation, connect a hosted backend URL via VITE_API_BASE_URL.'
+      );
+    }
     const errorMsg = data?.detail || data?.message || `Request failed with status ${response.status}`;
     throw new Error(errorMsg);
   }
