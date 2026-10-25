@@ -49,8 +49,6 @@ class Settings:
     def masked_api_key(self) -> str:
         if not self.ai_api_key:
             return ""
-        if len(self.ai_api_key) <= 8:
-            return "********"
-        return f"{self.ai_api_key[:4]}...{self.ai_api_key[-4:]}"
+        return "••••••••••••••••"
 
 settings = Settings()

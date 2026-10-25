@@ -171,8 +171,15 @@ export default function SettingsPage({ addToast }) {
               <Key className="w-4 h-4 text-craft-primary" />
               <span>API Key Status</span>
             </div>
-            <div className="text-sm font-mono text-craft-mainText">
-              {settings?.masked_api_key || 'Not Configured'}
+            <div className="text-sm font-mono text-craft-mainText flex items-center gap-1.5">
+              {settings?.has_api_key ? (
+                <>
+                  <span className="text-craft-accent tracking-widest font-mono">••••••••</span>
+                  <span className="text-xs text-craft-highlight font-sans">(Secure & Active)</span>
+                </>
+              ) : (
+                <span className="text-xs text-rose-400 font-sans">Not Configured</span>
+              )}
             </div>
           </div>
 
