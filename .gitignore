@@ -30,3 +30,6 @@ frontend/dist-ssr/
 .vscode/
 .idea/
 *.swp
+
+.vercel
+.env*
