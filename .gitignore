@@ -1,0 +1,32 @@
+# Environments & secrets
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.pytest_cache/
+
+# SQLite databases
+*.db
+*.sqlite3
+*.db-journal
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp

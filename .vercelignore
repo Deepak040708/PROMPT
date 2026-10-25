@@ -1,0 +1,11 @@
+prompts.db
+backend/prompts.db
+*.db
+.pytest_cache
+backend/tests
+.git
+.env
+backend/.env
+frontend/.env
+*.pyc
+__pycache__

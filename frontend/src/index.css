@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-craft-bg text-craft-mainText font-sans antialiased selection:bg-craft-primary/30 selection:text-craft-highlight;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'DM Serif Display', Georgia, serif;
+  }
+}
+
+/* Custom refined scrollbar matching new palette */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A1424;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #314966;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #648BCB;
+}
