@@ -8,10 +8,7 @@ import {
   Edit3, 
   Save, 
   X, 
-  HelpCircle, 
-  SlidersHorizontal,
-  ChevronDown,
-  ChevronUp
+  HelpCircle
 } from 'lucide-react';
 import { api } from '../api/client';
 import { copyTextToClipboard } from '../utils/clipboard';
@@ -26,13 +23,6 @@ export default function HomePage({
   navigateToTab
 }) {
   const [idea, setIdea] = useState(currentPrompt?.original_idea || '');
-  
-  // Optional Generation Controls
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [purpose, setPurpose] = useState('');
-  const [context, setContext] = useState('');
-  const [outputFormat, setOutputFormat] = useState('');
-  const [constraints, setConstraints] = useState('');
 
   // In-flight state management to prevent duplicate requests
   const [isGenerating, setIsGenerating] = useState(false);
@@ -66,14 +56,7 @@ export default function HomePage({
 
     setIsGenerating(true);
     try {
-      const options = {
-        purpose: purpose.trim() || undefined,
-        context: context.trim() || undefined,
-        output_format: outputFormat.trim() || undefined,
-        constraints: constraints.trim() || undefined,
-      };
-
-      const result = await api.generatePrompt(trimmed, options);
+      const result = await api.generatePrompt(trimmed);
       setCurrentPrompt(result);
       if (onPromptGenerated) onPromptGenerated(result);
       addToast('Prompt crafted successfully!', 'success');
@@ -88,18 +71,9 @@ export default function HomePage({
     if (!currentPrompt || isRegenerating) return;
     setIsRegenerating(true);
     try {
-      const options = {
-        purpose: purpose.trim() || currentPrompt.purpose || undefined,
-        context: context.trim() || currentPrompt.context || undefined,
-        output_format: outputFormat.trim() || currentPrompt.output_format || undefined,
-        constraints: constraints.trim() || currentPrompt.constraints || undefined,
-      };
-
       const result = await api.regeneratePrompt(
         currentPrompt.id,
-        currentPrompt.original_idea,
-        null,
-        options
+        currentPrompt.original_idea
       );
       setCurrentPrompt(result);
       if (onPromptUpdated) onPromptUpdated(result);
@@ -168,15 +142,6 @@ export default function HomePage({
     setIdea(sample);
   };
 
-  const clearControls = () => {
-    setPurpose('');
-    setContext('');
-    setOutputFormat('');
-    setConstraints('');
-  };
-
-  const hasActiveControls = Boolean(purpose || context || outputFormat || constraints);
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-10">
       {/* Hero Section */}
@@ -244,101 +209,6 @@ export default function HomePage({
             >
               💰 Monthly Budget Tracker
             </button>
-          </div>
-
-          {/* Optional Generation Controls Accordion */}
-          <div className="border border-craft-inputBorder rounded-2xl bg-craft-bg/40 overflow-hidden transition-all">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full px-4 py-3 flex items-center justify-between text-left text-xs font-semibold text-craft-mutedText hover:text-craft-mainText transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-craft-primary" />
-                <span>Optional Details & Constraints</span>
-                {hasActiveControls && (
-                  <span className="w-2 h-2 rounded-full bg-craft-accent"></span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 text-craft-mutedText">
-                <span className="text-[11px] font-normal hidden sm:inline">
-                  {showAdvanced ? 'Collapse options' : 'Customize purpose, context, format'}
-                </span>
-                {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </div>
-            </button>
-
-            {showAdvanced && (
-              <div className="p-4 pt-1 border-t border-craft-inputBorder/60 space-y-3 animate-fade-in text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-craft-mutedText mb-1 font-medium">
-                      Prompt Purpose / Goal (optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={purpose}
-                      onChange={(e) => setPurpose(e.target.value)}
-                      placeholder="e.g. Architecting a full-stack production spec"
-                      className="w-full px-3 py-2 bg-craft-surface border border-craft-inputBorder rounded-xl text-craft-mainText placeholder:text-craft-mutedText/50 focus:outline-none focus:border-craft-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-craft-mutedText mb-1 font-medium">
-                      Desired Output Format (optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={outputFormat}
-                      onChange={(e) => setOutputFormat(e.target.value)}
-                      placeholder="e.g. Structured markdown with numbered checklist"
-                      className="w-full px-3 py-2 bg-craft-surface border border-craft-inputBorder rounded-xl text-craft-mainText placeholder:text-craft-mutedText/50 focus:outline-none focus:border-craft-primary"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-craft-mutedText mb-1 font-medium">
-                      Additional Context & Requirements (optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={context}
-                      onChange={(e) => setContext(e.target.value)}
-                      placeholder="e.g. Offline-first mobile support, dark mode by default"
-                      className="w-full px-3 py-2 bg-craft-surface border border-craft-inputBorder rounded-xl text-craft-mainText placeholder:text-craft-mutedText/50 focus:outline-none focus:border-craft-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-craft-mutedText mb-1 font-medium">
-                      Constraints / Things to Avoid (optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={constraints}
-                      onChange={(e) => setConstraints(e.target.value)}
-                      placeholder="e.g. No paid external libraries, keep dependencies minimal"
-                      className="w-full px-3 py-2 bg-craft-surface border border-craft-inputBorder rounded-xl text-craft-mainText placeholder:text-craft-mutedText/50 focus:outline-none focus:border-craft-primary"
-                    />
-                  </div>
-                </div>
-
-                {hasActiveControls && (
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="button"
-                      onClick={clearControls}
-                      className="text-craft-mutedText hover:text-craft-mainText text-[11px] underline"
-                    >
-                      Clear optional fields
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Toolbar: Counter & Generate Button */}
