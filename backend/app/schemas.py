@@ -7,6 +7,7 @@ class PromptGenerateRequest(BaseModel):
     context: Optional[str] = Field(None, max_length=5000, description="Optional additional context or requirements")
     output_format: Optional[str] = Field(None, max_length=1000, description="Optional desired output format")
     constraints: Optional[str] = Field(None, max_length=2000, description="Optional constraints or things to avoid")
+    device_id: Optional[str] = Field(None, max_length=100, description="Unique client device identifier")
 
 class PromptRegenerateRequest(BaseModel):
     id: Optional[str] = Field(None, description="ID of existing prompt to regenerate")
@@ -16,6 +17,7 @@ class PromptRegenerateRequest(BaseModel):
     context: Optional[str] = Field(None, max_length=5000, description="Optional additional context or requirements")
     output_format: Optional[str] = Field(None, max_length=1000, description="Optional desired output format")
     constraints: Optional[str] = Field(None, max_length=2000, description="Optional constraints or things to avoid")
+    device_id: Optional[str] = Field(None, max_length=100, description="Unique client device identifier")
 
 class PromptUpdateRequest(BaseModel):
     generated_prompt: str = Field(..., min_length=1, max_length=50000, description="Updated prompt content")
@@ -34,6 +36,7 @@ class PromptResponse(BaseModel):
     language_detected: Optional[str] = None
     clarification_question: Optional[str] = None
     is_saved: bool
+    device_id: Optional[str] = None
     created_at: str
     updated_at: str
 

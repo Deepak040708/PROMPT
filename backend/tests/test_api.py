@@ -168,3 +168,55 @@ async def test_ai_generation_with_optional_controls_live():
         assert data["context"] == payload["context"]
         assert data["output_format"] == payload["output_format"]
         assert data["constraints"] == payload["constraints"]
+
+@pytest.mark.asyncio
+async def test_device_isolation():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        device_a = "device-alpha-111"
+        device_b = "device-beta-222"
+
+        # Insert prompts directly for each device
+        row_a = insert_prompt(
+            prompt_id="prompt-dev-a",
+            original_idea="Device A private recipe",
+            generated_prompt="Prompt specifically for Device A",
+            is_saved=True,
+            device_id=device_a
+        )
+        row_b = insert_prompt(
+            prompt_id="prompt-dev-b",
+            original_idea="Device B financial model",
+            generated_prompt="Prompt specifically for Device B",
+            is_saved=True,
+            device_id=device_b
+        )
+
+        # Device A requests history
+        res_a = await ac.get("/api/prompts/history", headers={"X-Device-ID": device_a})
+        assert res_a.status_code == 200
+        ids_a = [p["id"] for p in res_a.json()["prompts"]]
+        assert "prompt-dev-a" in ids_a
+        assert "prompt-dev-b" not in ids_a
+
+        # Device B requests history
+        res_b = await ac.get("/api/prompts/history", headers={"X-Device-ID": device_b})
+        assert res_b.status_code == 200
+        ids_b = [p["id"] for p in res_b.json()["prompts"]]
+        assert "prompt-dev-b" in ids_b
+        assert "prompt-dev-a" not in ids_b
+
+        # Device A requests saved prompts
+        res_saved_a = await ac.get("/api/prompts/saved", headers={"X-Device-ID": device_a})
+        assert res_saved_a.status_code == 200
+        saved_ids_a = [p["id"] for p in res_saved_a.json()["prompts"]]
+        assert "prompt-dev-a" in saved_ids_a
+        assert "prompt-dev-b" not in saved_ids_a
+
+        # Device A tries to delete Device B's prompt -> should fail with 404
+        del_attempt = await ac.delete("/api/prompts/prompt-dev-b", headers={"X-Device-ID": device_a})
+        assert del_attempt.status_code == 404
+
+        # Device B can delete Device B's prompt
+        del_success = await ac.delete("/api/prompts/prompt-dev-b", headers={"X-Device-ID": device_b})
+        assert del_success.status_code == 200
+

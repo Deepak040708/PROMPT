@@ -34,7 +34,7 @@ def init_db():
             cursor.execute("PRAGMA table_info(prompts)")
             existing_cols = {row["name"] for row in cursor.fetchall()}
 
-            for col_name in ["purpose", "context", "output_format", "constraints"]:
+            for col_name in ["purpose", "context", "output_format", "constraints", "device_id"]:
                 if col_name not in existing_cols:
                     conn.execute(f"ALTER TABLE prompts ADD COLUMN {col_name} TEXT")
 
@@ -43,6 +43,9 @@ def init_db():
             """)
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_prompts_is_saved ON prompts(is_saved);
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_prompts_device_id ON prompts(device_id);
             """)
     finally:
         conn.close()
@@ -57,7 +60,8 @@ def insert_prompt(
     constraints: Optional[str] = None,
     language_detected: Optional[str] = None,
     clarification_question: Optional[str] = None,
-    is_saved: bool = False
+    is_saved: bool = False,
+    device_id: Optional[str] = None
 ) -> Dict[str, Any]:
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     conn = get_connection()
@@ -68,8 +72,8 @@ def insert_prompt(
                 INSERT INTO prompts (
                     id, original_idea, generated_prompt, purpose, context,
                     output_format, constraints, language_detected,
-                    clarification_question, is_saved, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    clarification_question, is_saved, device_id, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     prompt_id,
@@ -82,19 +86,23 @@ def insert_prompt(
                     language_detected,
                     clarification_question,
                     1 if is_saved else 0,
+                    device_id,
                     now,
                     now
                 )
             )
-        return get_prompt_by_id(prompt_id)
+        return get_prompt_by_id(prompt_id, device_id=device_id)
     finally:
         conn.close()
 
-def get_prompt_by_id(prompt_id: str) -> Optional[Dict[str, Any]]:
+def get_prompt_by_id(prompt_id: str, device_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM prompts WHERE id = ?", (prompt_id,))
+        if device_id:
+            cursor.execute("SELECT * FROM prompts WHERE id = ? AND (device_id = ? OR device_id IS NULL)", (prompt_id, device_id))
+        else:
+            cursor.execute("SELECT * FROM prompts WHERE id = ?", (prompt_id,))
         row = cursor.fetchone()
         if not row:
             return None
@@ -105,6 +113,7 @@ def get_prompt_by_id(prompt_id: str) -> Optional[Dict[str, Any]]:
 def list_prompts(
     search: Optional[str] = None,
     saved_only: bool = False,
+    device_id: Optional[str] = None,
     limit: int = 100,
     offset: int = 0
 ) -> List[Dict[str, Any]]:
@@ -113,6 +122,10 @@ def list_prompts(
         cursor = conn.cursor()
         query = "SELECT * FROM prompts WHERE 1=1"
         params: list = []
+
+        if device_id:
+            query += " AND (device_id = ?)"
+            params.append(device_id)
 
         if saved_only:
             query += " AND is_saved = 1"
@@ -131,12 +144,16 @@ def list_prompts(
     finally:
         conn.close()
 
-def count_prompts(search: Optional[str] = None, saved_only: bool = False) -> int:
+def count_prompts(search: Optional[str] = None, saved_only: bool = False, device_id: Optional[str] = None) -> int:
     conn = get_connection()
     try:
         cursor = conn.cursor()
         query = "SELECT COUNT(*) FROM prompts WHERE 1=1"
         params: list = []
+
+        if device_id:
+            query += " AND (device_id = ?)"
+            params.append(device_id)
 
         if saved_only:
             query += " AND is_saved = 1"
@@ -151,27 +168,36 @@ def count_prompts(search: Optional[str] = None, saved_only: bool = False) -> int
     finally:
         conn.close()
 
-def update_prompt_text(prompt_id: str, new_prompt_text: str) -> Optional[Dict[str, Any]]:
+def update_prompt_text(prompt_id: str, new_prompt_text: str, device_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     conn = get_connection()
     try:
         with conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE prompts SET generated_prompt = ?, updated_at = ? WHERE id = ?",
-                (new_prompt_text, now, prompt_id)
-            )
+            if device_id:
+                cursor.execute(
+                    "UPDATE prompts SET generated_prompt = ?, updated_at = ? WHERE id = ? AND (device_id = ? OR device_id IS NULL)",
+                    (new_prompt_text, now, prompt_id, device_id)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE prompts SET generated_prompt = ?, updated_at = ? WHERE id = ?",
+                    (new_prompt_text, now, prompt_id)
+                )
             if cursor.rowcount == 0:
                 return None
-        return get_prompt_by_id(prompt_id)
+        return get_prompt_by_id(prompt_id, device_id=device_id)
     finally:
         conn.close()
 
-def toggle_save_prompt(prompt_id: str, explicit_save: Optional[bool] = None) -> Optional[Dict[str, Any]]:
+def toggle_save_prompt(prompt_id: str, explicit_save: Optional[bool] = None, device_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT is_saved FROM prompts WHERE id = ?", (prompt_id,))
+        if device_id:
+            cursor.execute("SELECT is_saved FROM prompts WHERE id = ? AND (device_id = ? OR device_id IS NULL)", (prompt_id, device_id))
+        else:
+            cursor.execute("SELECT is_saved FROM prompts WHERE id = ?", (prompt_id,))
         row = cursor.fetchone()
         if not row:
             return None
@@ -181,20 +207,29 @@ def toggle_save_prompt(prompt_id: str, explicit_save: Optional[bool] = None) -> 
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
         with conn:
-            conn.execute(
-                "UPDATE prompts SET is_saved = ?, updated_at = ? WHERE id = ?",
-                (1 if new_state else 0, now, prompt_id)
-            )
-        return get_prompt_by_id(prompt_id)
+            if device_id:
+                conn.execute(
+                    "UPDATE prompts SET is_saved = ?, updated_at = ? WHERE id = ? AND (device_id = ? OR device_id IS NULL)",
+                    (1 if new_state else 0, now, prompt_id, device_id)
+                )
+            else:
+                conn.execute(
+                    "UPDATE prompts SET is_saved = ?, updated_at = ? WHERE id = ?",
+                    (1 if new_state else 0, now, prompt_id)
+                )
+        return get_prompt_by_id(prompt_id, device_id=device_id)
     finally:
         conn.close()
 
-def delete_prompt(prompt_id: str) -> bool:
+def delete_prompt(prompt_id: str, device_id: Optional[str] = None) -> bool:
     conn = get_connection()
     try:
         with conn:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM prompts WHERE id = ?", (prompt_id,))
+            if device_id:
+                cursor.execute("DELETE FROM prompts WHERE id = ? AND (device_id = ? OR device_id IS NULL)", (prompt_id, device_id))
+            else:
+                cursor.execute("DELETE FROM prompts WHERE id = ?", (prompt_id,))
             return cursor.rowcount > 0
     finally:
         conn.close()

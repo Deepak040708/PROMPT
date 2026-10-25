@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, Header, status
 from ..schemas import (
     PromptGenerateRequest,
     PromptRegenerateRequest,
@@ -34,12 +34,16 @@ def format_row(row: dict) -> PromptResponse:
         language_detected=row.get("language_detected"),
         clarification_question=row.get("clarification_question"),
         is_saved=bool(row.get("is_saved", 0)),
+        device_id=row.get("device_id"),
         created_at=row["created_at"],
         updated_at=row["updated_at"]
     )
 
 @router.post("/generate", response_model=PromptResponse, status_code=status.HTTP_201_CREATED)
-async def generate(req: PromptGenerateRequest):
+async def generate(
+    req: PromptGenerateRequest,
+    x_device_id: Optional[str] = Header(None, alias="X-Device-ID")
+):
     idea = req.idea.strip()
     if not idea:
         raise HTTPException(status_code=400, detail="Idea cannot be empty.")
@@ -55,6 +59,7 @@ async def generate(req: PromptGenerateRequest):
 
     # Persist in SQLite
     new_id = str(uuid.uuid4())
+    device_id = (x_device_id or req.device_id or "").strip() or None
     row = insert_prompt(
         prompt_id=new_id,
         original_idea=idea,
@@ -65,7 +70,8 @@ async def generate(req: PromptGenerateRequest):
         constraints=req.constraints.strip() if req.constraints else None,
         language_detected=ai_result.get("language_detected"),
         clarification_question=ai_result.get("clarification_question"),
-        is_saved=False
+        is_saved=False,
+        device_id=device_id
     )
     if not row:
         raise HTTPException(status_code=500, detail="Failed to persist generated prompt.")
@@ -73,7 +79,11 @@ async def generate(req: PromptGenerateRequest):
     return format_row(row)
 
 @router.post("/regenerate", response_model=PromptResponse)
-async def regenerate(req: PromptRegenerateRequest):
+async def regenerate(
+    req: PromptRegenerateRequest,
+    x_device_id: Optional[str] = Header(None, alias="X-Device-ID")
+):
+    device_id = (x_device_id or req.device_id or "").strip() or None
     original_idea = req.original_idea
     existing_row = None
     purpose = req.purpose
@@ -82,7 +92,7 @@ async def regenerate(req: PromptRegenerateRequest):
     constraints = req.constraints
 
     if req.id:
-        existing_row = get_prompt_by_id(req.id)
+        existing_row = get_prompt_by_id(req.id, device_id=device_id)
         if not existing_row:
             raise HTTPException(status_code=404, detail="Original prompt not found.")
         if not original_idea:
@@ -110,7 +120,7 @@ async def regenerate(req: PromptRegenerateRequest):
 
     # If an existing prompt ID was provided, we update it and preserve saved status
     if req.id and existing_row:
-        updated = update_prompt_text(req.id, ai_result["generated_prompt"])
+        updated = update_prompt_text(req.id, ai_result["generated_prompt"], device_id=device_id)
         return format_row(updated)
     else:
         # Otherwise create a new record
@@ -125,7 +135,8 @@ async def regenerate(req: PromptRegenerateRequest):
             constraints=constraints.strip() if constraints else None,
             language_detected=ai_result.get("language_detected"),
             clarification_question=ai_result.get("clarification_question"),
-            is_saved=False
+            is_saved=False,
+            device_id=device_id
         )
         return format_row(row)
 
@@ -133,10 +144,13 @@ async def regenerate(req: PromptRegenerateRequest):
 async def get_history(
     search: Optional[str] = Query(None, description="Search term for idea, prompt, purpose, or context"),
     limit: int = Query(50, ge=1, le=200),
-    offset: int = Query(0, ge=0)
+    offset: int = Query(0, ge=0),
+    device_id: Optional[str] = Query(None),
+    x_device_id: Optional[str] = Header(None, alias="X-Device-ID")
 ):
-    rows = list_prompts(search=search, saved_only=False, limit=limit, offset=offset)
-    total = count_prompts(search=search, saved_only=False)
+    active_device_id = (x_device_id or device_id or "").strip() or None
+    rows = list_prompts(search=search, saved_only=False, device_id=active_device_id, limit=limit, offset=offset)
+    total = count_prompts(search=search, saved_only=False, device_id=active_device_id)
     return HistoryResponse(
         prompts=[format_row(r) for r in rows],
         total=total
@@ -146,44 +160,69 @@ async def get_history(
 async def get_saved(
     search: Optional[str] = Query(None, description="Search term within saved prompts"),
     limit: int = Query(50, ge=1, le=200),
-    offset: int = Query(0, ge=0)
+    offset: int = Query(0, ge=0),
+    device_id: Optional[str] = Query(None),
+    x_device_id: Optional[str] = Header(None, alias="X-Device-ID")
 ):
-    rows = list_prompts(search=search, saved_only=True, limit=limit, offset=offset)
-    total = count_prompts(search=search, saved_only=True)
+    active_device_id = (x_device_id or device_id or "").strip() or None
+    rows = list_prompts(search=search, saved_only=True, device_id=active_device_id, limit=limit, offset=offset)
+    total = count_prompts(search=search, saved_only=True, device_id=active_device_id)
     return HistoryResponse(
         prompts=[format_row(r) for r in rows],
         total=total
     )
 
 @router.get("/{prompt_id}", response_model=PromptResponse)
-async def get_prompt(prompt_id: str):
-    row = get_prompt_by_id(prompt_id)
+async def get_prompt(
+    prompt_id: str,
+    device_id: Optional[str] = Query(None),
+    x_device_id: Optional[str] = Header(None, alias="X-Device-ID")
+):
+    active_device_id = (x_device_id or device_id or "").strip() or None
+    row = get_prompt_by_id(prompt_id, device_id=active_device_id)
     if not row:
         raise HTTPException(status_code=404, detail="Prompt not found.")
     return format_row(row)
 
 @router.put("/{prompt_id}", response_model=PromptResponse)
-async def update_prompt(prompt_id: str, req: PromptUpdateRequest):
+async def update_prompt(
+    prompt_id: str,
+    req: PromptUpdateRequest,
+    device_id: Optional[str] = Query(None),
+    x_device_id: Optional[str] = Header(None, alias="X-Device-ID")
+):
     new_text = req.generated_prompt.strip()
     if not new_text:
         raise HTTPException(status_code=400, detail="Prompt content cannot be empty.")
     
-    updated = update_prompt_text(prompt_id, new_text)
+    active_device_id = (x_device_id or device_id or "").strip() or None
+    updated = update_prompt_text(prompt_id, new_text, device_id=active_device_id)
     if not updated:
         raise HTTPException(status_code=404, detail="Prompt not found.")
     return format_row(updated)
 
 @router.patch("/{prompt_id}/save", response_model=PromptResponse)
-async def save_toggle(prompt_id: str, req: Optional[PromptSaveToggleRequest] = None):
+async def save_toggle(
+    prompt_id: str,
+    req: Optional[PromptSaveToggleRequest] = None,
+    device_id: Optional[str] = Query(None),
+    x_device_id: Optional[str] = Header(None, alias="X-Device-ID")
+):
     explicit_save = req.is_saved if req else None
-    updated = toggle_save_prompt(prompt_id, explicit_save)
+    active_device_id = (x_device_id or device_id or "").strip() or None
+    updated = toggle_save_prompt(prompt_id, explicit_save, device_id=active_device_id)
     if not updated:
         raise HTTPException(status_code=404, detail="Prompt not found.")
     return format_row(updated)
 
 @router.delete("/{prompt_id}", status_code=status.HTTP_200_OK)
-async def delete(prompt_id: str):
-    success = delete_prompt(prompt_id)
+async def delete(
+    prompt_id: str,
+    device_id: Optional[str] = Query(None),
+    x_device_id: Optional[str] = Header(None, alias="X-Device-ID")
+):
+    active_device_id = (x_device_id or device_id or "").strip() or None
+    success = delete_prompt(prompt_id, device_id=active_device_id)
     if not success:
         raise HTTPException(status_code=404, detail="Prompt not found.")
     return {"status": "success", "message": f"Prompt {prompt_id} deleted successfully."}

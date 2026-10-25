@@ -1,9 +1,30 @@
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
+export function getDeviceId() {
+  if (typeof window === 'undefined') return 'server';
+  try {
+    let deviceId = localStorage.getItem('promptcraft_device_id');
+    if (!deviceId || typeof deviceId !== 'string' || deviceId.trim().length === 0) {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        deviceId = crypto.randomUUID();
+      } else {
+        deviceId = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 11);
+      }
+      localStorage.setItem('promptcraft_device_id', deviceId);
+    }
+    return deviceId;
+  } catch (e) {
+    // Fallback if localStorage is restricted (private browsing / iframe)
+    return 'anon_device_' + Math.random().toString(36).substring(2, 9);
+  }
+}
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const deviceId = getDeviceId();
   const headers = {
     'Content-Type': 'application/json',
+    'X-Device-ID': deviceId,
     ...(options.headers || {})
   };
 
@@ -44,7 +65,9 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  // Prompts with optional generation controls
+  getDeviceId,
+
+  // Prompts with optional generation controls and device scoping
   generatePrompt: (idea, options = {}) =>
     request('/prompts/generate', {
       method: 'POST',
@@ -54,6 +77,7 @@ export const api = {
         context: options.context || null,
         output_format: options.output_format || null,
         constraints: options.constraints || null,
+        device_id: getDeviceId(),
       })
     }),
 
@@ -68,11 +92,12 @@ export const api = {
         context: options.context || null,
         output_format: options.output_format || null,
         constraints: options.constraints || null,
+        device_id: getDeviceId(),
       })
     }),
 
   getHistory: (search = '', limit = 50, offset = 0) => {
-    const params = new URLSearchParams({ limit, offset });
+    const params = new URLSearchParams({ limit, offset, device_id: getDeviceId() });
     if (search && search.trim()) {
       params.append('search', search.trim());
     }
@@ -80,31 +105,40 @@ export const api = {
   },
 
   getSaved: (search = '', limit = 50, offset = 0) => {
-    const params = new URLSearchParams({ limit, offset });
+    const params = new URLSearchParams({ limit, offset, device_id: getDeviceId() });
     if (search && search.trim()) {
       params.append('search', search.trim());
     }
     return request(`/prompts/saved?${params.toString()}`);
   },
 
-  getPrompt: (id) => request(`/prompts/${id}`),
+  getPrompt: (id) => {
+    const params = new URLSearchParams({ device_id: getDeviceId() });
+    return request(`/prompts/${id}?${params.toString()}`);
+  },
 
-  updatePrompt: (id, generatedPrompt) =>
-    request(`/prompts/${id}`, {
+  updatePrompt: (id, generatedPrompt) => {
+    const params = new URLSearchParams({ device_id: getDeviceId() });
+    return request(`/prompts/${id}?${params.toString()}`, {
       method: 'PUT',
       body: JSON.stringify({ generated_prompt: generatedPrompt })
-    }),
+    });
+  },
 
-  toggleSavePrompt: (id, isSaved = null) =>
-    request(`/prompts/${id}/save`, {
+  toggleSavePrompt: (id, isSaved = null) => {
+    const params = new URLSearchParams({ device_id: getDeviceId() });
+    return request(`/prompts/${id}/save?${params.toString()}`, {
       method: 'PATCH',
       body: JSON.stringify(isSaved !== null ? { is_saved: isSaved } : {})
-    }),
+    });
+  },
 
-  deletePrompt: (id) =>
-    request(`/prompts/${id}`, {
+  deletePrompt: (id) => {
+    const params = new URLSearchParams({ device_id: getDeviceId() });
+    return request(`/prompts/${id}?${params.toString()}`, {
       method: 'DELETE'
-    }),
+    });
+  },
 
   // Settings & Health
   getSettings: () => request('/settings'),
