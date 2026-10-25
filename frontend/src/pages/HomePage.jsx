@@ -15,12 +15,10 @@ import {
 } from 'lucide-react';
 import { api } from '../api/client';
 import { copyTextToClipboard } from '../utils/clipboard';
-import PromptCard from '../components/PromptCard';
 
 export default function HomePage({
   currentPrompt,
   setCurrentPrompt,
-  recentPrompts,
   onPromptGenerated,
   onPromptUpdated,
   onPromptDeleted,
@@ -505,53 +503,6 @@ export default function HomePage({
               <span className="font-semibold text-craft-mutedText">Based on:</span>
               <span className="italic text-craft-mainText">"{currentPrompt.original_idea}"</span>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Recently Generated Section */}
-      {recentPrompts && recentPrompts.length > 0 && (
-        <div className="space-y-4 pt-6 border-t border-craft-cardBorder/40">
-          <div className="flex items-center justify-between">
-            <h3 className="font-serif text-xl text-craft-mainText">Recent Generations</h3>
-            <button
-              onClick={() => navigateToTab('history')}
-              className="text-xs text-craft-primary hover:text-craft-highlight font-mono font-medium transition-colors"
-            >
-              View Full History →
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {recentPrompts.slice(0, 3).map((p) => (
-              <PromptCard
-                key={p.id}
-                prompt={p}
-                onCopy={() => addToast('Prompt copied to clipboard!', 'success')}
-                onSaveToggle={async (item) => {
-                  const res = await api.toggleSavePrompt(item.id);
-                  if (onPromptUpdated) onPromptUpdated(res);
-                  addToast(res.is_saved ? 'Prompt saved!' : 'Prompt unsaved.', 'success');
-                }}
-                onRegenerate={async (item) => {
-                  const res = await api.regeneratePrompt(item.id, item.original_idea);
-                  if (onPromptUpdated) onPromptUpdated(res);
-                  setCurrentPrompt(res);
-                  addToast('Alternative generated!', 'success');
-                }}
-                onUpdateText={async (id, text) => {
-                  const res = await api.updatePrompt(id, text);
-                  if (onPromptUpdated) onPromptUpdated(res);
-                  if (currentPrompt?.id === id) setCurrentPrompt(res);
-                  addToast('Changes saved!', 'success');
-                }}
-                onOpenInHome={(item) => {
-                  setCurrentPrompt(item);
-                  window.scrollTo({ top: 300, behavior: 'smooth' });
-                }}
-                addToast={addToast}
-              />
-            ))}
           </div>
         </div>
       )}

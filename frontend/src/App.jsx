@@ -89,7 +89,6 @@ export default function App() {
           <HomePage
             currentPrompt={currentPrompt}
             setCurrentPrompt={setCurrentPrompt}
-            recentPrompts={recentPrompts}
             onPromptGenerated={handlePromptGenerated}
             onPromptUpdated={handlePromptUpdated}
             onPromptDeleted={handlePromptDeleted}
