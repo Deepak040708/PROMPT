@@ -95,38 +95,38 @@ export default function HistoryPage({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-8">
+    <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-10 space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl text-craft-mainText flex items-center gap-3">
-            <HistoryIcon className="w-8 h-8 text-craft-primary" />
+          <h1 className="font-serif text-2xl sm:text-4xl text-craft-mainText flex items-center gap-2.5 sm:gap-3">
+            <HistoryIcon className="w-6 h-6 sm:w-8 sm:h-8 text-craft-primary" />
             <span>Prompt History</span>
           </h1>
-          <p className="text-sm text-craft-mutedText mt-1">
+          <p className="text-xs sm:text-sm text-craft-mutedText mt-1">
             Browse, search, edit, or regenerate your previous prompts.
           </p>
         </div>
-        <div className="text-xs font-mono text-craft-mutedText px-3.5 py-1.5 bg-craft-surface border border-craft-inputBorder rounded-xl self-start sm:self-auto">
+        <div className="text-xs font-mono text-craft-mutedText px-3 py-1.5 bg-craft-surface border border-craft-inputBorder rounded-xl self-start sm:self-auto">
           {total} total records
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-craft-mutedText/60 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-craft-mutedText/60 absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search prompts by keyword, purpose, or context..."
-            className="w-full pl-11 pr-10 py-3 bg-craft-input border border-craft-inputBorder rounded-2xl text-sm text-craft-mainText placeholder:text-craft-mutedText/50 focus:outline-none focus:border-craft-primary focus:ring-2 focus:ring-craft-primary/20 transition-all"
+            placeholder="Search prompts by keyword or idea..."
+            className="w-full pl-10 sm:pl-11 pr-10 py-2.5 sm:py-3 bg-craft-input border border-craft-inputBorder rounded-xl sm:rounded-2xl text-base sm:text-sm text-craft-mainText placeholder:text-craft-mutedText/50 focus:outline-none focus:border-craft-primary focus:ring-2 focus:ring-craft-primary/20 transition-all"
           />
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-craft-mutedText hover:text-craft-mainText p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-craft-mutedText hover:text-craft-mainText p-1 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -137,7 +137,7 @@ export default function HistoryPage({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSavedFilter(false)}
-            className={`px-4 py-3 rounded-2xl text-xs font-semibold transition-all ${
+            className={`flex-1 sm:flex-initial px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all cursor-pointer min-h-[42px] flex items-center justify-center ${
               !savedFilter
                 ? 'bg-craft-primary text-craft-bg shadow-sm'
                 : 'bg-craft-surface hover:bg-craft-surfaceHover text-craft-mutedText border border-craft-inputBorder'
@@ -147,7 +147,7 @@ export default function HistoryPage({
           </button>
           <button
             onClick={() => setSavedFilter(true)}
-            className={`px-4 py-3 rounded-2xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+            className={`flex-1 sm:flex-initial px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer min-h-[42px] ${
               savedFilter
                 ? 'bg-craft-accent text-craft-bg shadow-sm'
                 : 'bg-craft-surface hover:bg-craft-surfaceHover text-craft-mutedText border border-craft-inputBorder'

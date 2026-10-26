@@ -1,7 +1,10 @@
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
+let inMemoryDeviceId = null;
+
 export function getDeviceId() {
   if (typeof window === 'undefined') return 'server';
+  if (inMemoryDeviceId) return inMemoryDeviceId;
   try {
     let deviceId = localStorage.getItem('promptcraft_device_id');
     if (!deviceId || typeof deviceId !== 'string' || deviceId.trim().length === 0) {
@@ -10,12 +13,19 @@ export function getDeviceId() {
       } else {
         deviceId = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 11);
       }
-      localStorage.setItem('promptcraft_device_id', deviceId);
+      try {
+        localStorage.setItem('promptcraft_device_id', deviceId);
+      } catch (storageErr) {
+        // Quota exceeded or private browsing restricted
+      }
     }
+    inMemoryDeviceId = deviceId;
     return deviceId;
   } catch (e) {
-    // Fallback if localStorage is restricted (private browsing / iframe)
-    return 'anon_device_' + Math.random().toString(36).substring(2, 9);
+    if (!inMemoryDeviceId) {
+      inMemoryDeviceId = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 11);
+    }
+    return inMemoryDeviceId;
   }
 }
 

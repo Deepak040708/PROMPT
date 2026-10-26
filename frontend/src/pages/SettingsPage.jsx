@@ -89,33 +89,33 @@ export default function SettingsPage({ addToast }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-8">
+    <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-10 space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="font-serif text-3xl sm:text-4xl text-craft-mainText flex items-center gap-3">
-          <SettingsIcon className="w-8 h-8 text-craft-primary" />
+        <h1 className="font-serif text-2xl sm:text-4xl text-craft-mainText flex items-center gap-2.5 sm:gap-3">
+          <SettingsIcon className="w-6 h-6 sm:w-8 sm:h-8 text-craft-primary" />
           <span>System & AI Configuration</span>
         </h1>
-        <p className="text-sm text-craft-mutedText mt-1">
+        <p className="text-xs sm:text-sm text-craft-mutedText mt-1">
           Inspect your AI model provider credentials, parameters, and SQLite database storage.
         </p>
       </div>
 
       {/* Provider Status Card */}
-      <div className="bg-craft-surface border border-craft-inputBorder rounded-3xl p-6 shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-craft-inputBorder/80">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+      <div className="bg-craft-surface border border-craft-inputBorder rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl space-y-5 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 sm:pb-6 border-b border-craft-inputBorder/80">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${
               settings?.configured 
                 ? 'bg-craft-card border border-craft-cardBorder text-craft-accent' 
                 : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'
             }`}>
-              <Cpu className="w-6 h-6" />
+              <Cpu className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-serif text-lg text-craft-mainText">Google Gemini Engine</h3>
-                <span className={`px-2 py-0.5 text-[11px] font-mono font-semibold rounded-full border ${
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-serif text-base sm:text-lg text-craft-mainText">Google Gemini Engine</h3>
+                <span className={`px-2 py-0.5 text-[10px] sm:text-[11px] font-mono font-semibold rounded-full border ${
                   settings?.configured
                     ? 'bg-craft-primary/10 border-craft-primary/30 text-craft-highlight'
                     : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
@@ -132,7 +132,7 @@ export default function SettingsPage({ addToast }) {
           <button
             onClick={handleTestConnection}
             disabled={isTesting}
-            className="px-4 py-2.5 bg-craft-card hover:bg-craft-cardHover text-craft-mainText text-xs font-semibold rounded-xl border border-craft-cardBorder transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full sm:w-auto px-4 py-2.5 bg-craft-card hover:bg-craft-cardHover text-craft-mainText text-xs font-semibold rounded-xl border border-craft-cardBorder transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-h-[42px] cursor-pointer active:scale-95"
           >
             <Activity className={`w-4 h-4 text-craft-primary ${isTesting ? 'animate-pulse' : ''}`} />
             <span>{isTesting ? 'Testing Connectivity...' : 'Test AI Connection'}</span>
@@ -221,7 +221,7 @@ export default function SettingsPage({ addToast }) {
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
                 placeholder="Leave blank to keep current key"
-                className="w-full px-4 py-2.5 bg-craft-input border border-craft-inputBorder rounded-xl text-sm text-craft-mainText placeholder:text-craft-mutedText/40 focus:outline-none focus:border-craft-primary"
+                className="w-full px-4 py-2.5 bg-craft-input border border-craft-inputBorder rounded-xl text-base sm:text-sm text-craft-mainText placeholder:text-craft-mutedText/40 focus:outline-none focus:border-craft-primary"
               />
             </div>
 
@@ -234,7 +234,7 @@ export default function SettingsPage({ addToast }) {
                 value={modelInput}
                 onChange={(e) => setModelInput(e.target.value)}
                 placeholder="gemini-3.8-flash"
-                className="w-full px-4 py-2.5 bg-craft-input border border-craft-inputBorder rounded-xl text-sm text-craft-mainText font-mono focus:outline-none focus:border-craft-primary"
+                className="w-full px-4 py-2.5 bg-craft-input border border-craft-inputBorder rounded-xl text-base sm:text-sm text-craft-mainText font-mono focus:outline-none focus:border-craft-primary"
               />
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function SettingsPage({ addToast }) {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-5 py-2.5 bg-craft-primary hover:bg-craft-primaryHover text-craft-bg font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 disabled:opacity-50"
+              className="w-full sm:w-auto px-5 py-2.5 min-h-[42px] bg-craft-primary hover:bg-craft-primaryHover text-craft-bg font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{isSaving ? 'Updating...' : 'Save Configuration'}</span>

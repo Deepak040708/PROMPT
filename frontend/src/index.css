@@ -3,9 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-craft-bg text-craft-mainText font-sans antialiased selection:bg-craft-primary/30 selection:text-craft-highlight;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    touch-action: manipulation;
+  }
+
+  /* Prevent automatic iOS zooming on inputs */
+  input, textarea, select, button {
+    touch-action: manipulation;
   }
 
   h1, h2, h3, .font-serif {

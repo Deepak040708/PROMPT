@@ -84,7 +84,7 @@ export default function App() {
       />
 
       {/* Main Content View */}
-      <main className="flex-1 pb-16">
+      <main className="flex-1 pb-24 sm:pb-16">
         {currentTab === 'home' && (
           <HomePage
             currentPrompt={currentPrompt}
@@ -122,7 +122,7 @@ export default function App() {
       </main>
 
       {/* Modern Refined Footer */}
-      <footer className="border-t border-craft-borderSubtle bg-craft-surface/60 py-8 text-xs text-craft-mutedText">
+      <footer className="mb-16 sm:mb-0 border-t border-craft-borderSubtle bg-craft-surface/60 py-6 sm:py-8 text-xs text-craft-mutedText">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-craft-accent" />

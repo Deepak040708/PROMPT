@@ -86,37 +86,37 @@ export default function SavedPage({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-8">
+    <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-10 space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl text-craft-mainText flex items-center gap-3">
-            <Bookmark className="w-8 h-8 text-craft-accent fill-craft-accent/20" />
+          <h1 className="font-serif text-2xl sm:text-4xl text-craft-mainText flex items-center gap-2.5 sm:gap-3">
+            <Bookmark className="w-6 h-6 sm:w-8 sm:h-8 text-craft-accent fill-craft-accent/20" />
             <span>Saved Prompts</span>
           </h1>
-          <p className="text-sm text-craft-mutedText mt-1">
+          <p className="text-xs sm:text-sm text-craft-mutedText mt-1">
             Your curated collection of high-value prompts ready for immediate use.
           </p>
         </div>
-        <div className="text-xs font-mono text-craft-accent px-3.5 py-1.5 bg-craft-surface border border-craft-inputBorder rounded-xl self-start sm:self-auto font-semibold">
+        <div className="text-xs font-mono text-craft-accent px-3 py-1.5 bg-craft-surface border border-craft-inputBorder rounded-xl self-start sm:self-auto font-semibold">
           {prompts.length} bookmarks
         </div>
       </div>
 
       {/* Search Input */}
       <div className="relative">
-        <Search className="w-4 h-4 text-craft-mutedText/60 absolute left-4 top-1/2 -translate-y-1/2" />
+        <Search className="w-4 h-4 text-craft-mutedText/60 absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search within saved prompts..."
-          className="w-full pl-11 pr-10 py-3 bg-craft-input border border-craft-inputBorder rounded-2xl text-sm text-craft-mainText placeholder:text-craft-mutedText/50 focus:outline-none focus:border-craft-accent focus:ring-2 focus:ring-craft-accent/20 transition-all"
+          className="w-full pl-10 sm:pl-11 pr-10 py-2.5 sm:py-3 bg-craft-input border border-craft-inputBorder rounded-xl sm:rounded-2xl text-base sm:text-sm text-craft-mainText placeholder:text-craft-mutedText/50 focus:outline-none focus:border-craft-accent focus:ring-2 focus:ring-craft-accent/20 transition-all"
         />
         {search && (
           <button
             onClick={() => setSearch('')}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-craft-mutedText hover:text-craft-mainText p-1"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-craft-mutedText hover:text-craft-mainText p-1 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
