@@ -233,7 +233,7 @@ export default function SettingsPage({ addToast }) {
                 type="text"
                 value={modelInput}
                 onChange={(e) => setModelInput(e.target.value)}
-                placeholder="gemini-3.8-flash"
+                placeholder="gemini-3.5-flash"
                 className="w-full px-4 py-2.5 bg-craft-input border border-craft-inputBorder rounded-xl text-base sm:text-sm text-craft-mainText font-mono focus:outline-none focus:border-craft-primary"
               />
             </div>

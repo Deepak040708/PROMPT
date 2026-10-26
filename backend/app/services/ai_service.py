@@ -35,7 +35,15 @@ CORE PRINCIPLES:
 REGENERATE_MODIFIER = """This is a REGENERATION request for the same original idea.
 Generate a fresh, distinctive alternative angle or structure (for example, emphasizing user journey, workflow ergonomics, modular component breakdown, or functional deliverables) while preserving all core requirements and constraints from the original idea. Avoid generating an identical prompt."""
 
-FALLBACK_MODELS = ["gemini-flash-lite-latest", "gemini-3.8-flash", "gemini-flash-latest"]
+FALLBACK_MODELS = [
+    "gemini-3.5-flash",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.8-flash",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+]
 
 def build_prompt_payload(
     idea: str,
@@ -62,39 +70,59 @@ def build_prompt_payload(
     return "\n\n".join(parts)
 
 async def call_gemini_api(payload: dict, candidate_models: List[str]) -> str:
-    last_error = ""
+    # Build unique deduplicated list of candidate models preserving order
+    unique_models: List[str] = []
     for model in candidate_models:
-        url = f"{settings.ai_base_url}/models/{model}:generateContent?key={settings.ai_api_key}"
-        try:
-            async with httpx.AsyncClient(timeout=18.0) as client:
-                response = await client.post(
-                    url,
-                    json=payload,
-                    headers={"Content-Type": "application/json"}
+        m = (model or "").strip()
+        if m and m not in unique_models:
+            unique_models.append(m)
+
+    last_error = ""
+    # 2 passes across models to weather transient Google high-demand micro-bursts (503 / 429)
+    for pass_num in range(2):
+        for model in unique_models:
+            url = f"{settings.ai_base_url}/models/{model}:generateContent?key={settings.ai_api_key}"
+            try:
+                # 8.0s timeout per candidate ensures snappy response and rapid failover
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    response = await client.post(
+                        url,
+                        json=payload,
+                        headers={"Content-Type": "application/json"}
+                    )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        part = candidates[0].get("content", {}).get("parts", [{}])[0]
+                        return part.get("text", "")
+
+                # If 503 (demand spike), 429 (rate limit), or other non-200 status
+                error_data = response.json() if "application/json" in response.headers.get("content-type", "") else {}
+                last_error = error_data.get("error", {}).get("message", response.text)
+                logger.warning(
+                    f"[Pass {pass_num+1}] Model {model} returned status {response.status_code}: {last_error[:100]}. Failing over..."
                 )
 
-            if response.status_code == 200:
-                data = response.json()
-                candidates = data.get("candidates", [])
-                if candidates:
-                    part = candidates[0].get("content", {}).get("parts", [{}])[0]
-                    return part.get("text", "")
+                # Micro-pause on 503/429 to allow socket buffer clearing
+                if response.status_code in (429, 503):
+                    await asyncio.sleep(0.3)
 
-            # If 429 (rate limit) or 503 (demand spike) or other error, fallback to next model immediately
-            error_data = response.json() if "application/json" in response.headers.get("content-type", "") else {}
-            last_error = error_data.get("error", {}).get("message", response.text)
-            logger.warning(f"Model {model} returned status {response.status_code}: {last_error[:100]}. Failing over...")
+            except httpx.TimeoutException:
+                last_error = f"Model {model} timed out after 8s."
+                logger.warning(f"[Pass {pass_num+1}] {last_error} Failing over to next candidate...")
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"[Pass {pass_num+1}] Error calling model {model}: {last_error}. Failing over...")
 
-        except httpx.TimeoutException:
-            last_error = f"Model {model} timed out after 18s."
-            logger.warning(f"{last_error} Failing over to next candidate...")
-        except Exception as e:
-            last_error = str(e)
-            logger.exception(f"Error calling model {model}: {last_error}")
+        if pass_num == 0:
+            # Brief backoff before second pass if all candidates faced a simultaneous micro-spike
+            await asyncio.sleep(0.7)
 
     raise HTTPException(
-        status_code=502,
-        detail=f"AI Provider temporary load issue: {last_error}. Please retry in a moment."
+        status_code=503,
+        detail="AI service is momentarily experiencing high demand across providers. Please retry in a moment."
     )
 
 async def generate_prompt(

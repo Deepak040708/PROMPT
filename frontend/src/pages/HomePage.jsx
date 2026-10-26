@@ -8,7 +8,8 @@ import {
   Edit3, 
   Save, 
   X, 
-  HelpCircle
+  HelpCircle,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../api/client';
 import { copyTextToClipboard } from '../utils/clipboard';
@@ -26,6 +27,7 @@ export default function HomePage({
 
   // In-flight state management to prevent duplicate requests
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
@@ -54,6 +56,7 @@ export default function HomePage({
       return;
     }
 
+    setGenerationError(null);
     setIsGenerating(true);
     try {
       const result = await api.generatePrompt(trimmed);
@@ -61,7 +64,9 @@ export default function HomePage({
       if (onPromptGenerated) onPromptGenerated(result);
       addToast('Prompt crafted successfully!', 'success');
     } catch (err) {
-      addToast(err.message || 'Failed to generate prompt. Check AI settings.', 'error');
+      const msg = err.message || 'Failed to generate prompt. Please retry in a moment.';
+      setGenerationError(msg);
+      addToast(msg, 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -242,6 +247,24 @@ export default function HomePage({
               )}
             </button>
           </div>
+
+          {/* Inline Error with 1-Click Retry */}
+          {generationError && (
+            <div className="flex items-center justify-between gap-3 p-3.5 bg-craft-danger/10 border border-craft-danger/30 rounded-xl text-xs text-craft-danger animate-fade-in mt-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span className="leading-snug">{generationError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="px-3 py-1.5 bg-craft-danger/20 hover:bg-craft-danger/30 active:scale-95 text-craft-mainText rounded-lg font-medium transition-all shrink-0 cursor-pointer disabled:opacity-50"
+              >
+                Retry Now
+              </button>
+            </div>
+          )}
         </form>
       </div>
 

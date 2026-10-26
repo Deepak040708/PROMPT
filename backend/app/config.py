@@ -17,7 +17,7 @@ else:
 class Settings:
     def __init__(self):
         self.ai_api_key: str = (os.getenv("AI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")).strip()
-        self.ai_model: str = os.getenv("AI_MODEL", "gemini-3.8-flash").strip()
+        self.ai_model: str = os.getenv("AI_MODEL", "gemini-3.5-flash").strip()
         self.ai_base_url: str = os.getenv("AI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta").strip()
         default_db = "/tmp/prompts.db" if os.getenv("VERCEL") else str(BASE_DIR / "prompts.db")
         self.database_path: str = os.getenv("DATABASE_PATH", default_db).strip()
@@ -28,7 +28,7 @@ class Settings:
         if env_backend.exists():
             load_dotenv(dotenv_path=env_backend, override=True)
         self.ai_api_key = (os.getenv("AI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")).strip()
-        self.ai_model = os.getenv("AI_MODEL", "gemini-3.8-flash").strip()
+        self.ai_model = os.getenv("AI_MODEL", "gemini-3.5-flash").strip()
         self.ai_base_url = os.getenv("AI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta").strip()
         default_db = "/tmp/prompts.db" if os.getenv("VERCEL") else str(BASE_DIR / "prompts.db")
         self.database_path = os.getenv("DATABASE_PATH", default_db).strip()
